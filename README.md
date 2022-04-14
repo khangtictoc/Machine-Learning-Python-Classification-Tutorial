@@ -171,3 +171,69 @@ ax.grid(axis="x")
 plt.suptitle(y, fontsize=20)
 plt.show()
 ```
+
+- **value_counts()** returns a Series containing counts of unique values.
+- **sort_values()** sort by the values with ascending order (default)
+- **patches** property are [Artists](https://matplotlib.org/stable/api/artist_api.html#matplotlib.artist.Artist) with a face color and an edge color. [More info](https://matplotlib.org/stable/api/patches_api.html). Consider this as an object to render for the chart
+- **text()** method add text to the Axes. View used parameters [here](https://matplotlib.org/3.5.1/api/_as_gen/matplotlib.pyplot.text.html)
+- **grid()** configures the ruler for the chart. [More info](https://matplotlib.org/3.5.0/api/_as_gen/matplotlib.pyplot.grid.html)
+- **suptitle()** adds title for the chart
+- **show()** displays the chart.
+
+Some notable propertes and methods (test with "Sex" column):
+
+```python
+column_name = "Sex"
+value_count = dtf[column_name].value_counts()
+
+print(value_count)
+print("Type of return value: " + str(type(value_count)))
+
+print("========= Sorted values ============")
+ordered_value_count = dtf[column_name].value_counts().sort_values()
+print(ordered_value_count)
+print("Type of return value: " + str(type(ordered_value_count)))
+
+plot = dtf[column_name].value_counts().sort_values().plot(kind="barh") # Horizontal bar chart
+print("Type of plot: " + str(type(str(plot))))
+for item in plot.patches:
+    print("Object with format(Type, coordinate, width, height, angle): " + str(item))
+```
+Output: 
+
+<p align="center"><img width=900 height=225 src="https://user-images.githubusercontent.com/48288606/163439859-732b07c2-4711-40bc-8e6e-9a9879977edc.png"></p>
+
+Experimental result:
+
+<p align="center"><img  src="https://user-images.githubusercontent.com/48288606/163438265-5064fe3d-ad56-4b59-8255-30e66781257f.png"></p>
+
+The survival rate (or the population mean) is 38%.
+
+Moreover, a [histogram](https://en.wikipedia.org/wiki/Histogram) is perfect to give a rough sense of the density of the underlying distribution of a single numerical data. I recommend using a [box plot](https://en.wikipedia.org/wiki/Box_plot) to graphically depict data groups through their quartiles. Let’s take the Age variable for instance:
+
+```python
+x = "Age"
+fig, ax = plt.subplots(nrows=1, ncols=2,  sharex=False, sharey=False)
+fig.suptitle(x, fontsize=20)
+### distribution
+ax[0].title.set_text('distribution')
+variable = dtf[x].fillna(dtf[x].mean())
+breaks = np.quantile(variable, q=np.linspace(0, 1, 11))
+variable = variable[ (variable > breaks[0]) & (variable < 
+                    breaks[10]) ]
+sns.distplot(variable, hist=True, kde=True, kde_kws={"shade": True}, ax=ax[0])
+des = dtf[x].describe()
+ax[0].axvline(des["25%"], ls='--')
+ax[0].axvline(des["mean"], ls='--')
+ax[0].axvline(des["75%"], ls='--')
+ax[0].grid(True)
+des = round(des, 2).apply(lambda x: str(x))
+box = '\n'.join(("min: "+des["min"], "25%: "+des["25%"], "mean: "+des["mean"], "75%: "+des["75%"], "max: "+des["max"]))
+ax[0].text(0.95, 0.95, box, transform=ax[0].transAxes, fontsize=10, va='top', ha="right", bbox=dict(boxstyle='round', facecolor='white', alpha=1))
+### boxplot 
+ax[1].title.set_text('outliers (log scale)')
+tmp_dtf = pd.DataFrame(dtf[x])
+tmp_dtf[x] = np.log(tmp_dtf[x])
+tmp_dtf.boxplot(column=x, ax=ax[1])
+plt.show()
+```
