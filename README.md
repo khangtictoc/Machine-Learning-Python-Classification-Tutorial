@@ -275,7 +275,7 @@ Output:
 
 Experimental result:
 
-<p align="center"><img width=900 height=300 src="https://user-images.githubusercontent.com/48288606/163519391-3f4a568d-ef78-4fe0-bd7d-0576b8158381.png"></p>
+<p align="center"><img src="https://user-images.githubusercontent.com/48288606/163519391-3f4a568d-ef78-4fe0-bd7d-0576b8158381.png"></p>
 
 The passengers were, on average, pretty young: the distribution is skewed towards the left side (the mean is 30 y.o and the 75th percentile is 38 y.o.). Coupled with the outliers in the box plot, the first spike in the left tail says that there was a significant amount of children.
 
