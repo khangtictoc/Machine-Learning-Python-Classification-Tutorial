@@ -1,7 +1,8 @@
 # Machine Learning (+ Data Analysis) with Python Classification: TUTORIAL
 
 **For reference**: 
-Main: https://towardsdatascience.com/machine-learning-with-python-classification-complete-tutorial-d2c99dc524ec
+
+Main: https://towardsdatascience.com/machine-learning-with-python-classification-complete-tutorial-d2c99dc524ec <br>
 Others:
 - Pandas: https://pandas.pydata.org/docs/reference/index.html
 - Matplotlib: https://matplotlib.org/3.5.0/index.html
@@ -11,9 +12,9 @@ Others:
 
 **Prerequisite**: 
 - Approaching ML with no fundamental knowledge with **Data Analysis**, start from beginning.
-- Know basic Python
+- Knowing basic **Python**
 - Quite long post with more explanation as opposed to the original tutorial. But if patient enough, we will get all skills and understandings we need
-- I will demo on **Colab** of course. But some explanatino would be in pure IDE
+- I will demo on **Colab** of course. But some explanations would be in pure IDE
 
 # Let's explore things:
 
