@@ -136,7 +136,7 @@ This code will create a dictionary with _{key:value}_ that is _{column_name:colu
 
 Experimental result:
 
-<p align="center"><img width=400 height=70 src="https://user-images.githubusercontent.com/48288606/163360731-1e41aea3-f723-41dc-8ef8-96f508830b8a.png"></p>
+<p align="center"><img src="https://user-images.githubusercontent.com/48288606/163360731-1e41aea3-f723-41dc-8ef8-96f508830b8a.png"></p>
 
 Analysing:
 
@@ -237,3 +237,46 @@ tmp_dtf[x] = np.log(tmp_dtf[x])
 tmp_dtf.boxplot(column=x, ax=ax[1])
 plt.show()
 ```
+
+- subplots() creates many sub-chart in the current figure. [More info](https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html)
+- suptitle() sets the title below the chart
+- fillna() would fill the null's cell with defined method. In this case, we use mean() method which returns a mean(average) number of specific column to fill the "holes"
+- linspace() returns evenly spaced numbers over a specified interval. [More info](https://numpy.org/doc/stable/reference/generated/numpy.linspace.html)
+- quantile() return one or array of quantiles. [Main document](https://numpy.org/doc/stable/reference/generated/numpy.quantile.html). This consumes me lots of time to understand, take time ! More references:
+  - [Quantile Method NumPy](https://www.skytowner.com/explore/numpy_quantile_method)
+  - [Quantile Definition](https://www.youtube.com/watch?v=IFKQLDmRK0Y&ab_channel=StatQuestwithJoshStarmer)
+  -  > NOTE: The default interpolation is **linear**.
+- distplot() combines the seaborn [kdeplot()](https://seaborn.pydata.org/generated/seaborn.kdeplot.html#seaborn.kdeplot) and [rugplot()](https://seaborn.pydata.org/generated/seaborn.rugplot.html#seaborn.rugplot) functions, plots univariate or bivariate distributions . [More info](https://seaborn.pydata.org/generated/seaborn.distplot.html)
+- axvline() adds a vertical line across the Axes. [More info](https://matplotlib.org/3.5.0/api/_as_gen/matplotlib.pyplot.axvline.html)
+- description() generates descriptive statistics.
+- log() returns natural logarithm 
+
+Some notable propertes and methods (test with "Age" column):
+ 
+```python
+column_name = "Age"
+fig, ax = plt.subplots(nrows=1, ncols=2,  sharex=False, sharey=False) # Return tuple (figure, [array of Axes])
+print("Figure: " + str(fig) )
+print("Axes: " + str(ax) + " - " +  str(len(ax)) + " Sub-plot" )
+
+variable  = dtf[column_name].fillna(dtf[column_name].mean()) # DataFrame 's handled with null values
+breaks = np.quantile(variable, q=np.linspace(0, 1, 11)) # Create array of quatile points with divisor is 10.
+
+print("Array of quantile point: " + str(breaks))  
+
+des = dtf[column_name].describe()
+print("=========== Statistics's information =========\n" + str((des)))
+```
+
+Output:
+
+<p align="center"><img width=900 height=300 src="https://user-images.githubusercontent.com/48288606/163519338-81a10528-5be1-47ba-9e86-cb533227d8a7.png"></p>
+
+Experimental result:
+
+<p align="center"><img width=900 height=300 src="https://user-images.githubusercontent.com/48288606/163519391-3f4a568d-ef78-4fe0-bd7d-0576b8158381.png"></p>
+
+The passengers were, on average, pretty young: the distribution is skewed towards the left side (the mean is 30 y.o and the 75th percentile is 38 y.o.). Coupled with the outliers in the box plot, the first spike in the left tail says that there was a significant amount of children.
+
+## Feature Engineering
+
