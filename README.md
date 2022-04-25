@@ -239,18 +239,18 @@ tmp_dtf.boxplot(column=x, ax=ax[1])
 plt.show()
 ```
 
-- subplots() creates many sub-chart in the current figure. [More info](https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html)
-- suptitle() sets the title below the chart
-- fillna() would fill the null's cell with defined method. In this case, we use mean() method which returns a mean(average) number of specific column to fill the "holes"
-- linspace() returns evenly spaced numbers over a specified interval. [More info](https://numpy.org/doc/stable/reference/generated/numpy.linspace.html)
-- quantile() return one or array of quantiles. [Main document](https://numpy.org/doc/stable/reference/generated/numpy.quantile.html). This consumes me lots of time to understand, take time ! More references:
+- **subplots()** creates many sub-chart in the current figure. [More info](https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html)
+- **suptitle()** sets the title below the chart
+- **fillna()** would fill the null's cell with defined method. In this case, we use mean() method which returns a mean(average) number of specific column to fill the "holes"
+- **linspace()** returns evenly spaced numbers over a specified interval. [More info](https://numpy.org/doc/stable/reference/generated/numpy.linspace.html)
+- **quantile()** return one or array of quantiles. [Main document](https://numpy.org/doc/stable/reference/generated/numpy.quantile.html). This consumes me lots of time to understand, take time ! More references:
   - [Quantile Method NumPy](https://www.skytowner.com/explore/numpy_quantile_method)
   - [Quantile Definition](https://www.youtube.com/watch?v=IFKQLDmRK0Y&ab_channel=StatQuestwithJoshStarmer)
   -  > NOTE: The default interpolation is **linear**.
-- distplot() combines the seaborn [kdeplot()](https://seaborn.pydata.org/generated/seaborn.kdeplot.html#seaborn.kdeplot) and [rugplot()](https://seaborn.pydata.org/generated/seaborn.rugplot.html#seaborn.rugplot) functions, plots univariate or bivariate distributions . [More info](https://seaborn.pydata.org/generated/seaborn.distplot.html)
-- axvline() adds a vertical line across the Axes. [More info](https://matplotlib.org/3.5.0/api/_as_gen/matplotlib.pyplot.axvline.html)
-- description() generates descriptive statistics.
-- log() returns natural logarithm 
+- **distplot()** combines the seaborn [kdeplot()](https://seaborn.pydata.org/generated/seaborn.kdeplot.html#seaborn.kdeplot) and [rugplot()](https://seaborn.pydata.org/generated/seaborn.rugplot.html#seaborn.rugplot) functions, plots univariate or bivariate distributions . [More info](https://seaborn.pydata.org/generated/seaborn.distplot.html)
+- **axvline()** adds a vertical line across the Axes. [More info](https://matplotlib.org/3.5.0/api/_as_gen/matplotlib.pyplot.axvline.html)
+- **description()** generates descriptive statistics.
+- **log()** returns natural logarithm 
 
 Some notable propertes and methods (test with "Age" column):
  
@@ -280,4 +280,55 @@ Experimental result:
 The passengers were, on average, pretty young: the distribution is skewed towards the left side (the mean is 30 y.o and the 75th percentile is 38 y.o.). Coupled with the outliers in the box plot, the first spike in the left tail says that there was a significant amount of children.
 
 ## Feature Engineering
+
+It’s time to create new features from raw data using domain knowledge. We will provide one example: We'll try to create a useful feature by extracting information from the `Cabin` column. We're assuming that the letter at the beginning of each cabin number (i.e. **"B96"**) indicates some kind of section, maybe there were some lucky sections near to lifeboats. I will summarize the observations in clusters by extracting the section of each cabin:
+
+```python
+## Create new column
+dtf["Cabin_section"] = dtf["Cabin"].apply(lambda x: str(x)[0])
+
+## Plot contingency table
+cont_table = pd.crosstab(index=dtf["Cabin_section"], 
+             columns=dtf["Pclass"], values=dtf["Y"], aggfunc="sum")
+sns.heatmap(cont_table, annot=True, cmap="YlGnBu", fmt='.0f',
+            linewidths=.5).set_title( 
+            'Cabin_section vs Pclass (filter: Y)' )
+```
+
+- **crosstab()** Compute a simple cross tabulation of two factors `Cabin_section` and `Pclass`. Computes with a function defined by `aggfunc` which is `sum`. Hence, sum the total of columns with given value specified in `values` which is `dtf["Y"]` ([crosstab reference](https://pandas.pydata.org/docs/reference/api/pandas.crosstab.html)). Hard to understand? For example:
+
+```python
+import pandas as pd
+import seaborn as sb
+import matplotlib.pyplot as plt
+import numpy as np
+
+dtf = pd.read_csv("train.csv")
+
+dtf = dtf.set_index("PassengerId") # Set index for "PassengerId"
+dtf = dtf.rename(columns={"Survived":"Y"}) # Rename column "Survived" to "Y"
+
+dtf["Cabin_section"] = dtf["Cabin"].apply(lambda x: str(x)[0])
+cont_table = pd.crosstab(index=dtf["Cabin_section"], 
+             columns=dtf["Pclass"], values=dtf["Y"], aggfunc="sum")
+print(cont_table)
+
+```
+
+Output about the passenger with  the relationship between `Cabin_section` and `Pclass` and their death:
+
+<p align="center"><img src="https://user-images.githubusercontent.com/48288606/165130865-842927eb-8e13-4ce8-ad99-a1327fe7d225.png"></p>
+
+Then plotting **heatmap** with:
+
+```python
+sb.heatmap(cont_table, annot=True, cmap="YlGnBu", fmt='.0f').set_title( 'Cabin_section vs Pclass (filter: Y)' )
+plt.show()
+```
+
+`cont_table` is our dataframe, `cmap` indicates color (optional), `fmt` (format string when adding annotations). [Heatmap reference](https://seaborn.pydata.org/generated/seaborn.heatmap.html)
+
+Experimental result (just as the same as the figure above with adding colors :> ):
+
+<p align="center"><img src="https://user-images.githubusercontent.com/48288606/165132114-d2af9153-5842-4432-ab66-95e29ca1bcc8.png"></p>
 
