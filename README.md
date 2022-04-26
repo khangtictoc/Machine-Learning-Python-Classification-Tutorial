@@ -368,10 +368,53 @@ Alright, let’s begin by partitioning the dataset. When splitting data into tra
 
 ```python
 ## split data
-dtf_train, dtf_test = model_selection.train_test_split(dtf, 
-                      test_size=0.3)
+dtf_train, dtf_test = model_selection.train_test_split(dtf, test_size=0.3)
 ## print info
 print("X_train shape:", dtf_train.drop("Y",axis=1).shape, "| X_test shape:", dtf_test.drop("Y",axis=1).shape)
 print("y_train mean:", round(np.mean(dtf_train["Y"]),2), "| y_test mean:", round(np.mean(dtf_test["Y"]),2))
 print(dtf_train.shape[1], "features:", dtf_train.drop("Y",axis=1).columns.to_list())
 ```
+
+`model_selection.train_test_split` randomizes and divides our dataframe (current `train.csv` dataset) to 2 part, _test set_ covers **0.3** (defined with `test_size`) and _train set_ covers **the rest (0.7)**. We have **891 rows**; therefore, there will be **623 rows** for _train set_ and **268 ones** for _test set_ <br>
+More reference: [train_test_split()](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.train_test_split.html)
+
+```python
+dtf_train, dtf_test = model_selection.train_test_split(dtf, test_size=0.3)
+
+print("======== Train Dataset ===========")
+print(dtf_train)
+
+print("======== Test Dataset ===========")
+print(dtf_test)
+```
+
+<p align="center"><img src="https://user-images.githubusercontent.com/48288606/165315838-a1ab5534-beef-4331-bd8b-141f0abe8d37.png"></p>
+
+`drop()` will remove a specific columns with specified name `Y` from dataframe and `shape()` will return a tuple with the numbers of rows and columns (rows, columns). `mean()` with second parameter is the number of order of `axis` (for example, with 2-dimension array, `0` is along columns, `1` is along rows) 
+
+Experimental result:
+
+<p align="center"><img src="https://user-images.githubusercontent.com/48288606/165321827-a10e658a-c772-46c6-af0c-e0fed42660b6.png"></p>
+
+Next step: the `Age` column contains some **missing data (19%)** that need to be handled. In practice, you can replace missing data with a specific value, like _9999_, that keeps trace of the missing information but _changes the variable distribution_. Alternatively, you can use _the average_ of the column, like I’m going to do. I’d like to underline that from a **Machine Learning** perspective, it’s correct to first split into train and test and then replace **N/A** values with the average of the training set only.
+
+There are still some categorical data that should be **encoded**. The two most common encoders are the [Label-Encoder](https://www.geeksforgeeks.org/ml-label-encoding-of-datasets-in-python/) (each unique label is mapped to an integer) and the [One-Hot-Encoder](https://en.wikipedia.org/wiki/One-hot) (each label is mapped to a binary vector). The first one is suited for data with **ordinality** only. If applied to a column with no ordinality, like `Sex`, it would turn the vector [male, female, female, male, …] into [1, 2, 2, 1, …] and we would have that **female > male** and with an average of 1.5 which makes no sense. On the other hand, the _One-Hot-Encoder_ would transform the previous example into two dummy [variables](https://en.wikipedia.org/wiki/Dummy_variable_(statistics)) (\***dichotomous** quantitative variables): Male [1, 0, 0, 1, …] and Female [0, 1, 1, 0, …]. It has the advantage that the result is binary rather than ordinal and that everything sits in an orthogonal vector space, but _features with high cardinality_ can lead to a [dimensionality issue](https://en.wikipedia.org/wiki/Curse_of_dimensionality#:~:text=The%20curse%20of%20dimensionality%20refers,was%20coined%20by%20Richard%20E.). We shall use the _One-Hot-Encoding_ method, transforming 1 categorical column with **n** unique values into **n-1** dummies. Let’s encode `Sex` as an example:
+
+> Note: `dichotomous` mentions completely opposing ideas or things
+
+```python
+## create dummy
+dummy = pd.get_dummies(dtf_train["Sex"], prefix="Sex",drop_first=True)
+dtf_train= pd.concat([dtf_train, dummy], axis=1)
+print( dtf_train.filter(like="Sex", axis=1).head() )
+
+## drop the original categorical column
+dtf = dtf_train.drop("Sex", axis=1)
+```
+
+Experimental result:
+
+<p align="center"><img src="https://user-images.githubusercontent.com/48288606/165328729-aaccccb3-0821-4048-9003-5a87d525e455.png"></p>
+
+That's *One-hot encoding* with `Sex`. Last but not least, we're going to scale the features. There are several different ways to do that, I’ll present just the most used ones: the **Standard-Scaler** and the **MinMax-Scaler**. The first one assumes data is normally distributed and rescales it such that the distribution centres around 0 with a standard deviation of 1. However, the outliers have an influence when computing the empirical mean and standard deviation which shrink the range of the feature values, therefore this scaler can’t guarantee _balanced feature scales in the presence of outliers_. On the other hand, the _MinMax-Scaler_ rescales the data set such that all feature values are in the same range (0–1). It is less affected by outliers but compresses all inliers in a narrow range. Since my data is not normally distributed, I’ll go with the _MinMax-Scaler_:
+
