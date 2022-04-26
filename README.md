@@ -13,7 +13,7 @@ Others:
 **Prerequisite**: 
 - Approaching ML with no fundamental knowledge with **Data Analysis**, start from beginning.
 - Knowing basic **Python**
-- Quite long post with more explanation as opposed to the original tutorial. But if patient enough, we will get all skills and understandings we need
+- Quite long post with more explanation about library like `seaborn`, `mathplotlib`, `pandas`, `numpy`, ... and its function for those are "newbie" in this aspect, as opposed to the original tutorial. But if patient enough, we will get all skills and understandings we need
 - I will demo on **Colab** of course. But some explanations would be in pure IDE
 
 # Let's explore things:
@@ -326,9 +326,52 @@ sb.heatmap(cont_table, annot=True, cmap="YlGnBu", fmt='.0f').set_title( 'Cabin_s
 plt.show()
 ```
 
-`cont_table` is our dataframe, `cmap` indicates color (optional), `fmt` (format string when adding annotations). [Heatmap reference](https://seaborn.pydata.org/generated/seaborn.heatmap.html)
+- `cont_table` is our dataframe
+- `cmap` indicates color (optional), [more color](https://python-graph-gallery.com/92-control-color-in-seaborn-heatmaps). Some most-used colors (we use the first):
+
+```python
+# plot using a color palette
+sns.heatmap(df, cmap="YlGnBu")
+plt.show()
+
+sns.heatmap(df, cmap="Blues")
+plt.show()
+
+sns.heatmap(df, cmap="BuPu")
+plt.show()
+
+sns.heatmap(df, cmap="Greens")
+plt.show()
+```
+<p align="center"><img width=800 height=550 src="https://user-images.githubusercontent.com/48288606/165232289-694ab4c5-e80a-4c82-a109-4f7d313fd23e.png"></p>
+
+- `fmt` (format string when adding annotations, explained [here](https://stackoverflow.com/questions/54506626/how-to-understand-seaborns-heatmap-annotation-format)).<br> [Heatmap reference](https://seaborn.pydata.org/generated/seaborn.heatmap.html)
 
 Experimental result (just as the same as the figure above with adding colors :> ):
 
 <p align="center"><img src="https://user-images.githubusercontent.com/48288606/165132114-d2af9153-5842-4432-ab66-95e29ca1bcc8.png"></p>
 
+This plot shows how survivors are distributed among cabin sections and classes (7 survivors are in section A, 35 in B, …). Most of the sections are assigned to the 1st and the 2nd classes, while the majority of missing sections ("n") belongs to the 3rd class. We are going to keep this new feature instead of the column Cabin:
+
+<p align="center"><img src="https://user-images.githubusercontent.com/48288606/165230410-7db9b687-ffa8-4217-a3f3-97e14b839918.png"></p>
+
+## Preprocessing
+
+Data preprocessing is the phase of preparing the raw data to make it suitable for a machine learning model. In particular:
+1. Each observation must be represented by a single row, in other words you can’t have two rows describing the same passenger because they will be processed separately by the model (the dataset is already in such form, so ✅). Moreover, each column should be a feature, so you shouldn’t use PassengerId as a predictor, that’s why this kind of table is called “feature matrix”.
+2. The dataset must be partitioned into at least two sets: the model shall be trained on a significant portion of your dataset (so-called “train set”) and tested on a smaller set (“test set”).
+3. Missing values should be replaced with something, otherwise your model may freak out.
+4. Categorical data must be encoded, which means converting labels into integers, because machine learning expects numbers not strings.
+5. It’s good practice to scale the data, it helps to normalize the data within a particular range and speed up the calculations in an algorithm.
+
+Alright, let’s begin by partitioning the dataset. When splitting data into train and test sets you must follow 1 basic rule: rows in the train set shouldn’t appear in the test set as well. That’s because the model sees the target values during training and uses it to understand the phenomenon. In other words, the model already knows the right answer for the training observations and testing it on those would be like cheating. I’ve seen a lot of people pitching their machine learning models claiming 99.99% of accuracy that did in fact ignore this rule. Luckily, the Scikit-learn package knows that:
+
+```python
+## split data
+dtf_train, dtf_test = model_selection.train_test_split(dtf, 
+                      test_size=0.3)
+## print info
+print("X_train shape:", dtf_train.drop("Y",axis=1).shape, "| X_test shape:", dtf_test.drop("Y",axis=1).shape)
+print("y_train mean:", round(np.mean(dtf_train["Y"]),2), "| y_test mean:", round(np.mean(dtf_test["Y"]),2))
+print(dtf_train.shape[1], "features:", dtf_train.drop("Y",axis=1).columns.to_list())
+```
