@@ -470,6 +470,62 @@ Let's go and rescale our feature with _MinMax-Scaler_ :
 
 ## Feature Selection
 
-Feature selection is the process of selecting a subset of relevant variables to build the machine learning model. It makes the model easier to interpret and reduces overfitting (when the model adapts too much to the training data and performs badly outside the train set).
-I already did a first “manual” feature selection during data analysis by excluding irrelevant columns. Now it’s going to be a bit different because we assume that all the features in the matrix are relevant and we want to drop the unnecessary ones. When a feature is not necessary? Well, the answer is easy: when there is a better equivalent, or one that does the same job but better.
-I’ll explain with an example: Pclass is highly correlated with Cabin_section because, as we’ve seen before, certain sections were located in 1st class and others in the 2nd. Let’s compute the correlation matrix to see it:
+Feature selection is the process of selecting a subset of relevant variables to build the machine learning model. It makes the model easier to interpret and reduces [overfitting](https://en.wikipedia.org/wiki/Overfitting) (when the model adapts too much to the training data and performs badly outside the train set).
+
+We already did a first "manual" feature selection during data analysis by excluding irrelevant columns. Now it’s going to be a bit different because we assume that all the features in the matrix are relevant and we want to drop the unnecessary ones. When a feature is not necessary? Well, the answer is easy: _when there is a better equivalent, or one that does the same job but better._
+
+I'll explain with an example: `Pclass` is highly correlated with `Cabin_section` because, as we’ve seen before, certain sections were located in 1st class and others in the 2nd. Let’s compute the correlation matrix to see it. Let's dispel some irrelevant columns first:
+
+```python
+dtf = dtf.drop(['Name', 'Ticket', 'Cabin' ], axis=1) # Choose columns to remove in this list
+dtf
+```
+
+Then using [factorize](https://pandas.pydata.org/docs/reference/api/pandas.factorize.html) for encoding the object as an enumerated type or categorical variable. After that,  visualizing the data to show the correlation between feature's values by additional function [pandas.DataFrame.corr](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.corr.html)
+
+```python
+corr_matrix = dtf.copy()
+for col in corr_matrix.columns:
+    if corr_matrix[col].dtype == "O":
+         corr_matrix[col] = corr_matrix[col].factorize(sort=True)[0]
+corr_matrix = corr_matrix.corr(method="pearson")
+sns.heatmap(corr_matrix, vmin=-1., vmax=1., annot=True, fmt='.2f', cmap="YlGnBu", cbar=True, linewidths=0.5)
+plt.title("pearson correlation")
+```
+
+Experimental result:
+
+<p align="center"><img src="https://user-images.githubusercontent.com/48288606/165541464-ec1afaeb-1b1b-49a2-8c57-a65ecf9d3418.png"></p>
+
+One among `Pclass` and `Cabin_section` could be unnecessary and we may decide to drop it and keep the most useful one (i.e. the one with the lowest p-value or the one that most reduces entropy).
+
+## Model Design
+
+Finally, it’s time to build the machine learning model. First, we need to choose an algorithm that is able to learn from training data how to recognize the two classes of the target variable by minimizing some error function.
+
+<p align="center"><img src="https://user-images.githubusercontent.com/48288606/165548544-3473974b-52d1-4636-9db9-52feb4285d27.png"></p>
+<p align="center"><i>From <a href=https://scikit-learn.org/stable/tutorial/machine_learning_map/index.html>scikit-learn</a> </i></p>
+
+I suggest to always try a [gradient boosting](https://en.wikipedia.org/wiki/Gradient_boosting) algorithm (like XGBoost). It’s a machine learning technique that produces a prediction model in the form of an ensemble of weak prediction models, typically decision trees. Basically it’s similar to a Random Forest with the difference that every tree is fitted on the error of the previous one. Sklearn also supports us with [sklearn.ensemble.GradientBoostingClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html)
+
+There a lot of hyperparameters and there is no general rule about what is best, so you just have to find the right combination that fits your data better. You could do different tries manually or you can let the computer do this tedious job with a GridSearch (tries every possible combination but takes time) or with a _RandomSearch_ (tries randomly a fixed number of iterations). I’ll try a _RandonSearch_ for my hyperparameter tuning: the machine will iterate n times (1000) through training data to find the combination of parameters (specified in the code below) that maximizes a scoring function used as KPI (accuracy, the ratio of the number of correct predictions to the total number of input samples):
+
+```python
+## call model
+model = ensemble.GradientBoostingClassifier()
+## define hyperparameters combinations to try
+param_dic = {'learning_rate':[0.15,0.1,0.05,0.01,0.005,0.001],      #weighting factor for the corrections by new trees when added to the model
+'n_estimators':[100,250,500,750,1000,1250,1500,1750],  #number of trees added to the model
+'max_depth':[2,3,4,5,6,7],    #maximum depth of the tree
+'min_samples_split':[2,4,6,8,10,20,40,60,100],    #sets the minimum number of samples to split
+'min_samples_leaf':[1,3,5,7,9],     #the minimum number of samples to form a leaf
+'max_features':[2,3,4,5,6,7],     #square root of features is usually a good starting point
+'subsample':[0.7,0.75,0.8,0.85,0.9,0.95,1]}       #the fraction of samples to be used for fitting the individual base learners. Values lower than 1 generally lead to a reduction of variance and an increase in bias.
+## random search
+random_search = model_selection.RandomizedSearchCV(model, 
+       param_distributions=param_dic, n_iter=1000, 
+       scoring="accuracy").fit(X_train, y_train)
+print("Best Model parameters:", random_search.best_params_)
+print("Best Model mean accuracy:", random_search.best_score_)
+model = random_search.best_estimator_
+```
