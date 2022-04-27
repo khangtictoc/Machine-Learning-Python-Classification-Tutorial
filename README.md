@@ -398,7 +398,7 @@ Experimental result:
 
 Next step: the `Age` column contains some **missing data (19%)** that need to be handled. In practice, you can replace missing data with a specific value, like _9999_, that keeps trace of the missing information but _changes the variable distribution_. Alternatively, you can use _the average_ of the column, like I’m going to do. I’d like to underline that from a **Machine Learning** perspective, it’s correct to first split into train and test and then replace **N/A** values with the average of the training set only.
 
-There are still some categorical data that should be **encoded**. The two most common encoders are the [Label-Encoder](https://www.geeksforgeeks.org/ml-label-encoding-of-datasets-in-python/) (each unique label is mapped to an integer) and the [One-Hot-Encoder](https://en.wikipedia.org/wiki/One-hot) (each label is mapped to a binary vector). The first one is suited for data with **ordinality** only. If applied to a column with no ordinality, like `Sex`, it would turn the vector [male, female, female, male, …] into [1, 2, 2, 1, …] and we would have that **female > male** and with an average of 1.5 which makes no sense. On the other hand, the _One-Hot-Encoder_ would transform the previous example into two dummy [variables](https://en.wikipedia.org/wiki/Dummy_variable_(statistics)) (\***dichotomous** quantitative variables): Male [1, 0, 0, 1, …] and Female [0, 1, 1, 0, …]. It has the advantage that the result is binary rather than ordinal and that everything sits in an orthogonal vector space, but _features with high cardinality_ can lead to a [dimensionality issue](https://en.wikipedia.org/wiki/Curse_of_dimensionality#:~:text=The%20curse%20of%20dimensionality%20refers,was%20coined%20by%20Richard%20E.). We shall use the _One-Hot-Encoding_ method, transforming 1 categorical column with **n** unique values into **n-1** dummies. Let’s encode `Sex` as an example:
+There are still some categorical data that should be **encoded**. The two most common encoders are the [Label-Encoder](https://www.geeksforgeeks.org/ml-label-encoding-of-datasets-in-python/) (each unique label is mapped to an integer) and the [One-Hot-Encoder](https://en.wikipedia.org/wiki/One-hot) (each label is mapped to a binary vector). The first one is suited for data with **ordinality** only. If applied to a column with no ordinality, like `Sex`, it would turn the vector [male, female, female, male, …] into [1, 2, 2, 1, …] and we would have that **female > male** and with an average of 1.5 which makes no sense. On the other hand, the _One-Hot-Encoder_ would transform the previous example into two dummy [variables](https://en.wikipedia.org/wiki/Dummy_variable_(statistics)) (\***dichotomous** quantitative variables): Male [1, 0, 0, 1, …] and Female [0, 1, 1, 0, …]. It has the advantage that the result is binary rather than ordinal and that everything sits in an orthogonal vector space, but _features with high cardinality_ can lead to a [dimensionality issue](https://en.wikipedia.org/wiki/Curse_of_dimensionality#:~:text=The%20curse%20of%20dimensionality%20refers,was%20coined%20by%20Richard%20E.). We shall use the _One-Hot-Encoding_ method, transforming 1 categorical column with **n** unique values into **n-1** dummies. Conveniently, in **pandas**, we have [pandas.get_dummies()](https://pandas.pydata.org/docs/reference/api/pandas.get_dummies.html) function which help us to handle that. Let’s encode `Sex` as an example:
 
 > Note: `dichotomous` mentions completely opposing ideas or things
 
@@ -412,9 +412,64 @@ print( dtf_train.filter(like="Sex", axis=1).head() )
 dtf = dtf_train.drop("Sex", axis=1)
 ```
 
+`get_dummies()` converts categorical variable into dummy/indicator variables and creates columns with _header name_ of indicated string "Sex" in `prefix` combining with each value . `drop_first` is a option to choose whether to get k-1 dummies out of k categorical levels by removing the first level, in this case is `Sex_female`. This just for simplifying our ouput, because we totally calculate `Sex_female` (the "first" columns) based on the rest, we may not need this.
+
+<p align="center"><img src="https://user-images.githubusercontent.com/48288606/165437651-f92e501e-d450-4433-8c86-bc56642e3810.png"></p>
+
 Experimental result:
 
 <p align="center"><img src="https://user-images.githubusercontent.com/48288606/165328729-aaccccb3-0821-4048-9003-5a87d525e455.png"></p>
 
-That's *One-hot encoding* with `Sex`. Last but not least, we're going to scale the features. There are several different ways to do that, I’ll present just the most used ones: the **Standard-Scaler** and the **MinMax-Scaler**. The first one assumes data is normally distributed and rescales it such that the distribution centres around 0 with a standard deviation of 1. However, the outliers have an influence when computing the empirical mean and standard deviation which shrink the range of the feature values, therefore this scaler can’t guarantee _balanced feature scales in the presence of outliers_. On the other hand, the _MinMax-Scaler_ rescales the data set such that all feature values are in the same range (0–1). It is less affected by outliers but compresses all inliers in a narrow range. Since my data is not normally distributed, I’ll go with the _MinMax-Scaler_:
+We do similary, use _One-Hot-Encoding_ with `Embarked` and `Pclass`:
 
+**Embark**:
+
+```python
+## create dummy
+dummy = pd.get_dummies(dtf_train["Embarked"], prefix="Embarked",drop_first=True)
+dtf_train= pd.concat([dtf_train, dummy], axis=1)
+print( dtf_train.filter(like="Embarked", axis=1).head() )
+
+## drop the original categorical column
+dtf = dtf_train.drop("Embarked", axis=1)
+```
+
+Experimental result (remove `Embarked_C`):
+
+<p align="center"><img src="https://user-images.githubusercontent.com/48288606/165435106-3c9f6228-c44b-4b03-ab84-7f513d8f06d6.png"></p>
+
+**Pclass:** 
+
+```python
+## create dummy
+dummy = pd.get_dummies(dtf_train["Pclass"], prefix="Pclass",drop_first=True)
+dtf_train= pd.concat([dtf_train, dummy], axis=1)
+print( dtf_train.filter(like="Pclass", axis=1).head() )
+
+## drop the original categorical column
+dtf = dtf_train.drop("Pclass", axis=1)
+```
+
+Experimental result (remove `Pclass_1`):
+
+<p align="center"><img src="https://user-images.githubusercontent.com/48288606/165438134-97479520-a9da-440a-9028-15d4c9b36b27.png"></p>
+
+
+That's *One-hot encoding* with `Sex`. Last but not least, we're going to scale the features. There are several different ways to do that, I’ll present just the most used ones: the **Standard-Scaler** and the **MinMax-Scaler**. The first one assumes data is normally distributed and rescales it such that the distribution centres around 0 with a standard deviation of 1. However, the outliers have an influence when computing the empirical mean and standard deviation which shrink the range of the feature values, therefore this scaler can’t guarantee _balanced feature scales in the presence of outliers_. On the other hand, the _MinMax-Scaler_ rescales the data set such that all feature values are in the same range (0–1). It is less affected by outliers but compresses all inliers in a narrow range. Since my data is not normally distributed, We'll go with the _MinMax-Scaler_. But before, we gonna remove **Categorical** columns (which contain characters or strings), keep columns with "dummies" or "number".
+
+```python
+dtf_train = dtf_train.drop(['Pclass', 'Name', 'Sex', 'Ticket', 'Cabin', 'Embarked', 'Cabin_section'], axis=1)
+dtf_train
+```
+
+<p align="center"><img src="https://user-images.githubusercontent.com/48288606/165439089-0a76f9d6-8ac5-4988-a6ac-f7a7fda5fa50.png"></p>
+
+Let's go and rescale our feature with _MinMax-Scaler_ :
+
+<p align="center"><img src="https://user-images.githubusercontent.com/48288606/165439467-e1b316e5-dcb7-4c1a-b1f6-7af74d5be0bd.png"></p>
+
+## Feature Selection
+
+Feature selection is the process of selecting a subset of relevant variables to build the machine learning model. It makes the model easier to interpret and reduces overfitting (when the model adapts too much to the training data and performs badly outside the train set).
+I already did a first “manual” feature selection during data analysis by excluding irrelevant columns. Now it’s going to be a bit different because we assume that all the features in the matrix are relevant and we want to drop the unnecessary ones. When a feature is not necessary? Well, the answer is easy: when there is a better equivalent, or one that does the same job but better.
+I’ll explain with an example: Pclass is highly correlated with Cabin_section because, as we’ve seen before, certain sections were located in 1st class and others in the 2nd. Let’s compute the correlation matrix to see it:
